@@ -7,6 +7,8 @@ int main()
     // TestCircularQueueSeqInMutiThread();
     // TestThreadSafeQueueHt();
     // TestThreadSafeHash();
-    TestThreadSafeList();
+    // TestThreadSafeList();
+    // TesaLockFreeStack();
+    MultiThreadPush();
     return 0;
 }

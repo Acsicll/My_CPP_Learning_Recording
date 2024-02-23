@@ -2,7 +2,9 @@
 
 int main()
 {
-    // ListNode::TestListNode();
-    lengthOfLongestSubstring::TestLengthOfLongestSubstring();
+    // Test function space
+    //  ListNode::TestListNode();
+    // lengthOfLongestSubstring::TestLengthOfLongestSubstring();
+    findMedianSortedArrays::TestFindMedianSortedArrays();
     return 0;
 }

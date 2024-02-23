@@ -865,6 +865,24 @@ class threadsafe_list {
             }
         }
     }
+    template <typename Predicate>
+    bool remove_first(Predicate p)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> new_lk(next->_mtx);
+            if (p(*next->_data)) {
+                std::unique_lock<node> old_next = std::move(current->_next);
+                current->_next = std::move(next->_next);
+                return true;
+            }
+            lk.unlock();
+            current = next;
+            lk = std::move(new_lk);
+        }
+        return false;
+    }
     void push_front(T const& value)
     {
         std::unique_ptr<node> new_node(new node(value));
@@ -903,4 +921,228 @@ class threadsafe_list {
     }
 };
 
+template <typename T>
+class double_push_list {
+    struct node
+    {
+        std::mutex _mtx;
+        std::shared_ptr<T> _data;
+        std::unique_ptr<node> _next;
+        node() : _next() {}
+        node(T const& value) : _data(std::make_shared<T>(value)) {}
+    };
+    node _head;
+    node* _last_node_ptr;
+    std::mutex _last_ptr_mtx;
+
+  public:
+    double_push_list()
+    {
+        _last_node_ptr = &_head;
+    }
+    ~double_push_list() {}
+    double_push_list(double_push_list const& other) = delete;
+    double_push_list& operator=(double_push_list const& other) = delete;
+    void push_front(T const& value)
+    {
+        std::unique_ptr<node> new_node(new node(value));
+        std::lock_guard<std::mutex> lk(_head._mtx);
+        new_node->_next = std::move(_head._next);
+        _head._next = std::move(new_node);
+        if (_head._next->_next == nullptr) {
+            std::lock_guard<std::mutex> last_lk(_last_ptr_mtx);
+            _last_node_ptr = _head._next.get();
+        }
+    }
+    void push_back(T const& value)
+    {
+        std::unique_ptr<node> new_node(new node(value));
+        std::lock(_last_node_ptr->_mtx, _last_ptr_mtx);
+        std::unique_lock<std::mutex> lk(_last_node_ptr->_mtx, std::adopt_lock);
+        std::unique_lock<std::mutex> last_lk(_last_ptr_mtx, std::adopt_lock);
+        _last_node_ptr->_next = std::move(new_node);
+        _last_node_ptr = _last_node_ptr->_next.get();
+    }
+    template <typename Function>
+    void for_each(Function f)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> next_lk(next->_mtx);
+            lk.unlock();
+            f(*next->_data);
+            current = next;
+            lk = std::move(next_lk);
+        }
+    }
+    template <typename Predicate>
+    std::shared_ptr<T> find_first_if(Predicate p)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> next_lk(next->_mtx);
+            lk.unlock();
+            if (p(*next->_data)) {
+                return next->_data;
+            }
+            current = next;
+            lk = std::move(next_lk);
+        }
+        return std::shared_ptr<T>();
+    }
+    template <typename Predicate>
+    void remove_if(Predicate p)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> next_lk(next->_mtx);
+            if (p(*next->_data)) {
+                std::unique_ptr<node> old_next = std::move(current->_next);
+                current->_next = std::move(next->_next);
+                if (current->_next == nullptr) {
+                    std::lock_guard<std::mutex> last_lk(_last_ptr_mtx);
+                    _last_node_ptr = current;
+                }
+                next_lk.unlock();
+            }
+            else {
+                lk.unlock();
+                current = next;
+                lk = std::move(next_lk);
+            }
+        }
+    }
+    template <typename Predicate>
+    bool remove_first(Predicate p)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> next_lk(next->_mtx);
+            if (p(*next->_data)) {
+                std::unique_ptr<node> old_next = std::move(current->_next);
+                current->_next = std::move(next->_next);
+                if (current->_next == nullptr) {
+                    std::lock_guard<std::mutex> last_lk(_last_ptr_mtx);
+                    _last_node_ptr = current;
+                }
+                next_lk.unlock();
+                return true;
+            }
+            lk.unlock();
+            current = next;
+            lk = std::move(next_lk);
+        }
+        return false;
+    }
+    template <typename Predicate>
+    void insert_if(Predicate p, T const& value)
+    {
+        node* current = &_head;
+        std::unique_lock<std::mutex> lk(_head._mtx);
+        while (node* const next = current->_next.get()) {
+            std::unique_lock<std::mutex> next_lk(next->_mtx);
+            if (p(*next->_data)) {
+                std::unique_ptr<node> new_node(new node(value));
+                auto old_next = std::move(current->_next);
+                new_node->_next = std::move(old_next);
+                current->_next = std::move(new_node);
+                return;
+            }
+            lk.unlock();
+            current = next;
+            lk = std::move(next_lk);
+        }
+    }
+};
+
+template <typename T>
+class lock_free_stack {
+  private:
+    struct node
+    {
+        std::shared_ptr<T> _data;
+        node* _next;
+        node(T const& data) : _data(std::make_shared<T>(data)) {}
+    };
+    lock_free_stack(const lock_free_stack&) = delete;
+    lock_free_stack& operator=(const lock_free_stack&) = delete;
+    std::atomic<node*> head;
+    std::atomic<node*> to_be_deleted;
+    std::atomic<int> threads_in_pop;
+
+  public:
+    lock_free_stack() {}
+    void push(T const& data)
+    {
+        node* const new_node = new node(data);
+        new_node->_next = head.load();
+        while (!head.compare_exchange_weak(new_node->_next, new_node))
+            ;
+    }
+    std::shared_ptr<T> pop()
+    {
+        ++threads_in_pop;
+        node* old_head = head.load();
+        do {
+            old_head = head.load();
+            if (old_head == nullptr) {
+                --threads_in_pop;
+                return nullptr;
+            }
+        } while (!head.compare_exchange_weak(old_head, old_head->_next));
+        std::shared_ptr<T> res;
+        if (old_head) {
+            res.swap(old_head->_data);
+        }
+        try_reclaim(old_head);
+        return res;
+    }
+    void try_reclaim(node* old_head)
+    {
+        if (threads_in_pop == 1) {
+            node* nodes_to_delete = to_be_deleted.exchange(nullptr);
+            if (!--threads_in_pop) {
+                delete_nodes(nodes_to_delete);
+            }
+            else if (nodes_to_delete) {
+                chain_pending_nodes(nodes_to_delete);
+            }
+            delete old_head;
+        }
+        else {
+            chain_pending_node(old_head);
+            --threads_in_pop;
+        }
+    }
+    static void delete_nodes(node* nodes)
+    {
+        while (nodes) {
+            node* next = nodes->_next;
+            delete nodes;
+            nodes = next;
+        }
+    }
+    void chain_pending_node(node* n)
+    {
+        chain_pending_nodes(n, n);
+    }
+    void chain_pending_nodes(node* first, node* last)
+    {
+        last->_next = to_be_deleted;
+        while (!to_be_deleted.compare_exchange_weak(last->_next, first))
+            ;
+    }
+    void chain_pending_nodes(node* nodes)
+    {
+        node* last = nodes;
+        while (node* const next = last->_next) {
+            last = next;
+        }
+        chain_pending_nodes(nodes, last);
+    }
+};
 #endif

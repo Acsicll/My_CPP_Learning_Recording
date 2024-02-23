@@ -359,3 +359,91 @@ void TestThreadSafeList()
     t1.join();
     t2.join();
 }
+
+void MultiThreadPush()
+{
+    double_push_list<MyClass> thread_safe_list;
+
+    std::thread t1([&]() {
+        for (int i = 0; i < 20000; i++) {
+            MyClass mc(i);
+            thread_safe_list.push_front(mc);
+            std::cout << "push front " << i << " success" << std::endl;
+        }
+    });
+
+    std::thread t2([&]() {
+        for (int i = 20000; i < 40000; i++) {
+            MyClass mc(i);
+            thread_safe_list.push_back(mc);
+            std::cout << "push back " << i << " success" << std::endl;
+        }
+    });
+
+    std::thread t3([&]() {
+        for (int i = 0; i < 40000;) {
+            bool rmv_res = thread_safe_list.remove_first(
+                [&](const MyClass& mc) { return mc.GetValue() == i; });
+
+            if (!rmv_res) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+
+            i++;
+        }
+    });
+
+    t1.join();
+    t2.join();
+    t3.join();
+
+    std::cout << "begin for each print...." << std::endl;
+    thread_safe_list.for_each([](const MyClass& mc) {
+        std::cout << "for each print " << mc << std::endl;
+    });
+    std::cout << "end for each print...." << std::endl;
+}
+
+void TesaLockFreeStack()
+{
+    lock_free_stack<int> lk_free_stack;
+    std::set<int> remv_set;
+    std::mutex set_mutex;
+    std::thread t1([&]() {
+        for (int i = 0; i < 20000; i++) {
+            lk_free_stack.push(i);
+            std::cout << "push data: " << i << " success" << std::endl;
+        }
+    });
+    std::thread t2([&]() {
+        for (int i = 0; i < 10000;) {
+            auto head = lk_free_stack.pop();
+            if (!head) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+            std::lock_guard<std::mutex> lock(set_mutex);
+            remv_set.insert(*head);
+            std::cout << "pop data: " << *head << " success" << std::endl;
+            i++;
+        }
+    });
+    std::thread t3([&]() {
+        for (int i = 0; i < 10000;) {
+            auto head = lk_free_stack.pop();
+            if (!head) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+            std::lock_guard<std::mutex> lock(set_mutex);
+            remv_set.insert(*head);
+            std::cout << "pop data: " << *head << " success" << std::endl;
+            i++;
+        }
+    });
+    t1.join();
+    t2.join();
+    t3.join();
+    assert(remv_set.size() == 20000);
+}

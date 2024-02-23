@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+
 namespace ListNode {
 struct ListNode
 {
@@ -141,4 +142,42 @@ void TestLengthOfLongestSubstring()
     }
 }
 }  // namespace lengthOfLongestSubstring
+
+namespace findMedianSortedArrays {
+class Solution {
+  public:
+    double findMedianSortedArrays(std::vector<int>& nums1,
+                                  std::vector<int>& nums2)
+    {
+        double res = 0.0;
+        int size = nums1.size() + nums2.size();
+        std::vector<int> ivec;
+        std::copy(nums1.begin(), nums1.end(), std::back_inserter(ivec));
+        std::copy(nums2.begin(), nums2.end(), std::back_inserter(ivec));
+        std::sort(ivec.begin(), ivec.end());
+        std::for_each(ivec.begin(), ivec.end(),
+                      [](const int val) { std::cout << val << " "; });
+        int nums = (size % 2 == 0) ? 2 : 1;
+        if (nums == 1) {
+            res = ivec[size / 2];
+        }
+        else {
+            res = (static_cast<double>(ivec[size / 2 - 1]) +
+                   static_cast<double>(ivec[size / 2])) /
+                  2 * 1.0f;
+        }
+        return res;
+    }
+};
+void TestFindMedianSortedArrays()
+{
+    std::vector<int> nums1 = {1, 3};
+    std::vector<int> nums2 = {2};
+
+    Solution s;
+
+    std::cout << s.findMedianSortedArrays(nums1, nums2) << " ";
+}
+}  // namespace findMedianSortedArrays
+
 #endif
