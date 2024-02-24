@@ -9,6 +9,9 @@ int main()
     // TestThreadSafeHash();
     // TestThreadSafeList();
     // TesaLockFreeStack();
-    MultiThreadPush();
+    // MultiThreadPush();
+    TesaLockFreeStack();
+    std::cout << "hello wolrd" << std::endl;
+    // TestHazardPointerStack();
     return 0;
 }

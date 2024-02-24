@@ -173,9 +173,7 @@ void TestFindMedianSortedArrays()
 {
     std::vector<int> nums1 = {1, 3};
     std::vector<int> nums2 = {2};
-
     Solution s;
-
     std::cout << s.findMedianSortedArrays(nums1, nums2) << " ";
 }
 }  // namespace findMedianSortedArrays

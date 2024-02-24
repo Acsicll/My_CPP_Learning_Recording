@@ -3,7 +3,9 @@
 #include <atomic>
 #include <iostream>
 #include <memory>
+#include <mingw.thread.h>
 #include <sstream>
+
 std::atomic<bool> x, y;
 std::atomic<int> z;
 
