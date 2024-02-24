@@ -178,4 +178,60 @@ void TestFindMedianSortedArrays()
 }
 }  // namespace findMedianSortedArrays
 
+namespace longestPalindrome {
+class Solution {
+  public:
+    std::string longestPalindrome(std::string s)
+    {
+        if (s.length() == 1) {
+            return s;
+        }
+        else if (s.length() == 2 && s[0] == s[1]) {
+            return s;
+        }
+        std::string res = "";
+        for (int i = 0; i < s.length(); ++i) {
+            std::string substring;
+            for (int j = i; j < s.length(); ++j) {
+                substring += s[j];
+                // std::cout << substring << std::endl;
+                auto first = substring.begin();
+                auto end = substring.end() - 1;
+                int sublength = substring.length();
+                int choose = sublength % 2;
+                while (*first == *end) {
+                    ++first;
+                    if (!choose && first == end) {
+                        break;
+                    }
+                    --end;
+                    if (choose && first == end) {
+                        break;
+                    }
+                }
+                if (sublength == 2 && substring[0] != substring[1]) {
+                    if (res.length() < sublength) {
+                        res.clear();
+                        res += substring[0];
+                    }
+                }
+                if (first == end && res.length() < sublength) {
+                    res.clear();
+                    res = substring;
+                }
+            }
+        }
+        return res;
+    }
+};
+void TestLongestPalindrome()
+{
+    std::vector<std::string> strvec = {"ac", "babad", "cbbd"};
+    Solution s;
+    for (auto val : strvec) {
+        std::cout << s.longestPalindrome(val) << std::endl;
+    }
+}
+
+}  // namespace longestPalindrome
 #endif

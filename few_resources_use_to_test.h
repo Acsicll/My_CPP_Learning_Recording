@@ -24,5 +24,14 @@ struct MyClass
         return _value;
     }
 };
+namespace CanNoTRunInVscode {
+unsigned const max_hazard_pointers = 100;
+struct hazard_pointer
+{
+    std::atomic<std::thread::id> _id;
+    std::atomic<void*> _pointer;
+};
+hazard_pointer hazard_pointers[max_hazard_pointers];
+}  // namespace CanNoTRunInVscode
 
 #endif

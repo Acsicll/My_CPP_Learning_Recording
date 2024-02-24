@@ -1,6 +1,6 @@
-#include "test_functions.cpp"
+#include "test_functions.h"
 #include <iostream>
-
+using namespace CanNoTRunInVscode;
 int main()
 {
     // TestCircularQueSeq();
@@ -10,8 +10,8 @@ int main()
     // TestThreadSafeList();
     // TesaLockFreeStack();
     // MultiThreadPush();
-    TesaLockFreeStack();
-    std::cout << "hello wolrd" << std::endl;
+    // TesaLockFreeStack();
     // TestHazardPointerStack();
+    std::cout << "Done" << std::endl;
     return 0;
 }

@@ -1,6 +1,6 @@
+#include "concurrency_leaning.h"
 #include "few_resources_use_to_test.h"
 #include "imitate_container.h"
-#include "thread_.h"
 #include "use_bind.h"
 #include <mingw.thread.h>
 #include <set>
@@ -447,7 +447,7 @@ void TesaLockFreeStack()
     t3.join();
     assert(remv_set.size() == 20000);
 }
-
+namespace CanNoTRunInVscode {
 void TestHazardPointerStack()
 {
     hazard_pointer_stack<int> hazard_stack;
@@ -490,3 +490,4 @@ void TestHazardPointerStack()
     t2.join();
     t3.join();
 }
+}  // namespace CanNoTRunInVscode

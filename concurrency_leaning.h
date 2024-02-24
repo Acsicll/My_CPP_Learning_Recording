@@ -1,5 +1,5 @@
-#ifndef _THREAD__H_
-#define _THREAD__H_
+#ifndef _CONCURRENCY_LEANING_H_
+#define _CONCURRENCY_LEANING_H_
 #include "few_resources_use_to_test.h"
 #include <algorithm>
 #include <assert.h>
@@ -576,7 +576,7 @@ class threadsafe_queue_ptr {
     std::condition_variable _cv;
 
   public:
-    threadsafe_queue() {}
+    threadsafe_queue_ptr() {}
     void push(T new_value)
     {
         std::shared_ptr<T> data(std::make_shared<T>(std::move(new_value)));
@@ -1146,13 +1146,8 @@ class lock_free_stack {
     }
 };
 
-extern unsigned const max_hazard_pointers = 100;
-struct hazard_pointer
-{
-    std::atomic<std::thread::id> _id;
-    std::atomic<void*> _pointer;
-};
-hazard_pointer hazard_pointers[max_hazard_pointers];
+namespace CanNoTRunInVscode {
+extern hazard_pointer hazard_pointers[max_hazard_pointers];
 class hp_owner {
   private:
     hazard_pointer* _hp;
@@ -1202,7 +1197,9 @@ class hazard_pointer_stack {
     {
         std::shared_ptr<T> _data;
         node* _next;
-        node(T const& data) : _data(std::make_shared<T>(data)) {}
+        node(T const& data) : _data(std::make_shared<T>(data)), _next(nullptr)
+        {
+        }
     };
     struct data_to_reclaim
     {
@@ -1291,4 +1288,6 @@ class hazard_pointer_stack {
         return res;
     }
 };
+}  // namespace CanNoTRunInVscode
+
 #endif

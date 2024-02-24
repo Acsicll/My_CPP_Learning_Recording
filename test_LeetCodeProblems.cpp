@@ -6,6 +6,7 @@ int main()
 {
     // ListNode::TestListNode();
     // lengthOfLongestSubstring::TestLengthOfLongestSubstring();
-    findMedianSortedArrays::TestFindMedianSortedArrays();
+    // findMedianSortedArrays::TestFindMedianSortedArrays();
+    longestPalindrome::TestLongestPalindrome();
     return 0;
 }
