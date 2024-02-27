@@ -1,17 +1,20 @@
-#include "test_functions.h"
 #include <iostream>
+#include "test_functions.h"
 using namespace CanNoTRunInVscode;
 int main()
 {
-    // TestCircularQueSeq();
-    // TestCircularQueueSeqInMutiThread();
-    // TestThreadSafeQueueHt();
-    // TestThreadSafeHash();
-    // TestThreadSafeList();
-    // TesaLockFreeStack();
-    // MultiThreadPush();
-    // TesaLockFreeStack();
-    // TestHazardPointerStack();
-    std::cout << "Done" << std::endl;
-    return 0;
+  // TestCircularQueSeq();
+  // TestCircularQueueSeqInMutiThread();
+  // TestThreadSafeQueueHt();
+  // TestThreadSafeHash();
+  // TestThreadSafeList();
+  // TesaLockFreeStack();
+  // MultiThreadPush();
+  // TesaLockFreeStack();
+  // TestHazardPointerStack();
+  // TestSingleRefStack();
+  // AtomicMemoryOperator::TesatReleastSeq();
+  TestRefCountStack();
+  std::cout << "Done" << std::endl;
+  return 0;
 }
