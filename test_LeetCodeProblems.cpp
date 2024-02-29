@@ -9,6 +9,8 @@ int main() {
   // longestPalindrome::TestLongestPalindrome();
   // convert::TestConvert();
   // reverse::TestReverse();
-  myAtio::TestMyAtio();
+  // myAtio::TestMyAtio();
+  // isPalindrome::TestIsPalindrome();
+  isMatch::TestIsMatch();
   return 0;
 }

@@ -7,7 +7,11 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <regex>
+#include <sstream>
+#include <stack>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "few_resources_use_to_test.h"
@@ -313,73 +317,238 @@ namespace myAtio {
 class Solution {
  public:
   int myAtio(std::string s) {
+    int res = 0;
     auto len = s.length();
     if (!len) {
-      return 0;
-    }
-    std::size_t not_space_index = s.find_first_not_of(' ');
-    if (not_space_index != std::string::npos) {
-      if (isalpha(s[not_space_index + 1])) {
-        return 0;
-      }
-    }
-    std::size_t is_negetive = s.find_first_of('-');
-    std::size_t is_positive = s.find_first_of('+');
-    int res_signed = 0;
-    if (is_negetive != std::string::npos && is_positive != std::string::npos) {
-      return 0;
-    } else {
-      res_signed = is_negetive != std::string::npos
-                       ? -1
-                       : (is_positive != std::string::npos ? 1 : 1);
-    }
-
-    int64_t res = 0;
-    if (is_negetive == 0 && is_positive == 0) {
       return res;
     }
-    int is_digit_num = 0;
-    auto tmp = s;
-    std::reverse(tmp.begin(), tmp.end());
-    for (char ch : tmp) {
-      if (ch >= '0' && ch <= '9') {
-        int num = ch - '0';
-        if (INT32_MAX / std::pow(10, is_digit_num) <= num) {
-          if (res_signed == -1) {
-            return INT32_MIN;
-          }
-          return INT32_MAX;
-        }
-        num *= std::pow(10, is_digit_num);
-        if (INT32_MAX - num - res <= 0) {
-          if (res_signed == -1) {
-            return INT32_MIN;
-          }
-          return INT32_MAX;
-        }
-        res += num;
-        ++is_digit_num;
-      } else if (ch == '.') {
-        res = 0;
-        is_digit_num = 0;
-      } else if (ch != '+' && ch != '-' && ch != ' ' && is_digit_num > 0) {
-        res = 0;
+    auto is_negitive = s.find_first_of('-');
+    auto is_positive = s.find_first_of('+');
+    int res_signed = 0;
+    if (is_negitive != std::string::npos && is_positive != std::string::npos) {
+      if (is_negitive != is_positive - 1 || is_positive != is_negitive - 1) {
+        res_signed = (is_negitive > is_positive ? 1 : -1);
+      } else {
         return res;
-      } else if (ch == '+' || ch == '-') {
+      }
+    } else {
+      res_signed = (is_positive != std::string::npos
+                        ? 1
+                        : (is_negitive != std::string::npos ? -1 : 1));
+    }
+    std::string temp_str;
+    bool invaild = false;
+    int dig_count = 0;
+    for (int i = 0; i < len; ++i) {
+      if (s[i] == ' ' && !dig_count) {
+        if (i - 1 >= 0 && (s[i - 1] == '-' || s[i - 1] == '+')) {
+          break;
+        }
+        continue;
+      } else if (s[i] == '-' || s[i] == '+') {
+        if (i - 1 >= 0 && isdigit(s[i - 1])) {
+          break;
+        }
+        temp_str += s[i];
+      } else if (isdigit(s[i])) {
+        temp_str += s[i];
+        dig_count++;
+      } else if (s[i] == '.') {
+        break;
+      } else {
+        invaild = true;
         break;
       }
     }
-    res = res * res_signed;
+    if (invaild && !dig_count) {
+      return 0;
+    }
+    std::string temp_str2;
+    bool have_other_dig = false;
+    for (auto ch : temp_str) {
+      if (ch == '0' && !have_other_dig) {
+        continue;
+      }
+      temp_str2 += ch;
+      have_other_dig = true;
+    }
+    if (auto num = atoll(temp_str2.c_str())) {
+      if (num > INT32_MAX) {
+        return INT32_MAX;
+      } else if (num < INT32_MIN) {
+        return INT32_MIN;
+      }
+      res = num;
+    }
     return res;
   }
 };
+
+class Automaton {
+  std::string state = "start";
+  std::unordered_map<std::string, std::vector<std::string>> table = {
+      {"start", {"start", "signed", "in_number", "end"}},
+      {"signed", {"end", "end", "in_number", "end"}},
+      {"in_number", {"end", "end", "in_number", "end"}},
+      {"end", {"end", "end", "end", "end"}}};
+  int get_col(char ch) {
+    if (isspace(ch))
+      return 0;
+    if (ch == '+' || ch == '-')
+      return 1;
+    if (isdigit(ch))
+      return 2;
+    return 3;
+  }
+
+ public:
+  int sign = 1;
+  long long ans = 0;
+  void get(char ch) {
+    state = table[state][get_col(ch)];
+    if (state == "in_number") {
+      ans = ans * 10 + ch - '0';
+      ans = sign == 1 ? std::min(ans, (long long)INT_MAX)
+                      : std::min(ans, -(long long)INT_MIN);
+    } else if (state == "signed") {
+      sign = ch == '+' ? 1 : -1;
+    }
+  }
+  int myAtoi(std::string str) {
+    Automaton automaton;
+    for (char ch : str) {
+      automaton.get(ch);
+    }
+    return automaton.sign * automaton.ans;
+  }
+};
+
 void TestMyAtio() {
   Solution s;
-  // std::cout << ;
-  printValue(s.myAtio("420"), s.myAtio("   -42"), s.myAtio("words and 987"),
-             s.myAtio("-91283472332"), s.myAtio("3.14159"), s.myAtio("+-12"),
-             s.myAtio("+1"), s.myAtio("00000-42a1234"),
-             s.myAtio("  0000000000012345678"), s.myAtio("  -0012a42"));
+  std::vector<std::string> strvec = {"-13+8",
+                                     "420",
+                                     "4193 with words",
+                                     "   -42",
+                                     "words and 987",
+                                     "-91283472332",
+                                     "3.14159",
+                                     "+-12",
+                                     "+1",
+                                     "00000-42a1234",
+                                     "  0000000000012345678",
+                                     "  -0012a42",
+                                     "21474836460",
+                                     "   +0 123",
+                                     "-5-",
+                                     "  +  413"};
+  for (auto it = strvec.begin(); it != strvec.end(); ++it) {
+    // printValue(s.myAtio(str));
+    std::cout << s.myAtio(*it) << " ";
+  }
 }
 }  // namespace myAtio
+
+namespace isPalindrome {
+class Solution {
+ public:
+  bool isPalindrome(int x) {
+    auto orignal_str(std::to_string(x));
+    // auto reverse_str = orignal_str;
+    //  std::reverse(reverse_str.begin(), reverse_str.end());
+    std::string reverse_str(orignal_str.rbegin(), orignal_str.rend());
+    if (orignal_str == reverse_str)
+      return true;
+    return false;
+  };
+};
+void TestIsPalindrome() {
+  Solution S;
+  std::vector<int> test_samples = {-121, 121, 10};
+  for (auto val : test_samples) {
+    std::cout << (S.isPalindrome(val) ? "true " : "false ");
+  }
+}
+}  // namespace isPalindrome
+
+namespace isMatch {
+class Solution {
+ public:
+  auto isMatch(std::string s, std::string p) -> bool {
+    // std::regex ex(p);
+    // return (std::regex_match(s, ex) == 1 ? true : false);
+    auto s_len = s.length(), p_len = p.length();
+    if (!s_len || !p_len) {
+      return false;
+    }
+    if (p_len >= 2 && p[0] == '.' && p[1] == '*') {
+      return true;
+    }
+    if (p.find_first_of('.') == std::string::npos &&
+        p.find_first_of('*') == std::string::npos) {
+      if (s != p) {
+        return false;
+      }
+    }
+    std::string tmp;
+    char befor_last_ch = 0;
+    bool res = false;
+    int i = 0;
+    for (int j = 0; i < s_len && j < p_len;) {
+      if (s[i] == p[j]) {
+        tmp += s[i];
+        ++j;
+        ++i;
+        continue;
+      } else if (p[j] == '.') {
+        befor_last_ch = s[i];
+        tmp += s[i];
+        ++j;
+        ++i;
+      } else if (p[j] == '*') {
+        if (j - 1 >= 0) {
+          befor_last_ch = p[j - 1];
+          if (p[j] == '.') {
+            befor_last_ch = s[i];
+            tmp += s[i];
+            ++j;
+            ++i;
+          } else if (befor_last_ch == s[i]) {
+            tmp += s[i];
+            ++j;
+            ++i;
+            continue;
+          }
+        }
+        if (s[i] != befor_last_ch) {
+          j++;
+        }
+      } else {
+        j++;
+        // continue;
+      }
+    }
+    // std::cout << tmp << ": ";
+    if (i == s_len && s == tmp) {
+      res = true;
+    }
+    return res;
+  }
+};
+
+void TestIsMatch() {
+  Solution S;
+  std::vector<std::pair<std::string, std::string>> test_samples = {
+      {"ab", ".*c"},
+      {"aab", "c*a*b"},
+      {"ab", ".*"},
+      {"mississippi", "mis*is*p*."},
+      {"mississippi", "mis*is*ip*."},
+      {"aa", "a*"},
+      {"aa", "a"},
+  };
+  for (auto pair : test_samples) {
+    std::cout << S.isMatch(pair.first, pair.second) << " ";
+  }
+}
+}  // namespace isMatch
 #endif
