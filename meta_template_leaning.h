@@ -6,9 +6,9 @@
 #include <type_traits>
 namespace SomeTemplateInstance {
 namespace TemplateExample {
-template <typename It>
-std::size_t distance(It first, It last) {
-  using category = typename std::iterator_traits<It>::iterator_category;
+template <typename Iterator>
+std::size_t distance(Iterator first, Iterator last) {
+  using category = typename std::iterator_traits<Iterator>::iterator_category;
   // using if constexpr makes complier pass. if constexpr is evaluated at
   // complier time,whereas if is not.This means that branches can be
   // rejected at complier time,and thus will nerver get compiler.
@@ -25,6 +25,26 @@ std::size_t distance(It first, It last) {
       ++result;
     }
     return result;
+  }
+}
+
+template <typename T = std::size_t, typename Iterator>
+Iterator advance(Iterator begin, Iterator end, T distance) {
+  using category = typename std::iterator_traits<Iterator>::iterator_category;
+  if constexpr (std::is_same<std::random_access_iterator_tag,
+                             category>::value) {
+    size_t length = end - begin;
+    if (distance < length && distance >= 0) {
+      return begin + distance;
+    }
+    std::cerr << "error distance to advance" << std::endl;
+  } else {
+    auto temp = distance;
+    auto temp_start = begin;
+    while (temp--) {
+      ++temp_start;
+    }
+    return temp_start;
   }
 }
 }  // namespace TemplateExample
@@ -85,6 +105,8 @@ template <typename T>
 T max(const T& a, const T& b) {
   return a > b ? a : b;
 }
+// using std::string_literals allows adding a 's' behind the const char* type
+// constant, which means conversion the constant to a string type value
 using namespace std::string_literals;
 
 // T1{} constructs a non-name object which can as a initial value
@@ -132,6 +154,34 @@ RT implicit_conversion_ret_type_sum(const Args&... args) {
   //     res += arr[i];
   //   }
   return std::accumulate(std::begin(arr), std::end(arr), RT{});
+}
+
+void printValue() {
+  std::cout << std::endl;
+}
+
+template <typename T, typename... Args>
+void printValue(T val, Args... args) {
+  std::cout << val << " ";
+  printValue(args...);
+}
+
+template <typename T, typename C>
+void printValue(const C& container) {
+  auto start = container.cbegin();
+  auto end = container.cend();
+  for (; start != end; ++start) {
+    std::cout << *start << " ";
+  }
+}
+
+template <typename C>
+void printValue(const C& container) {
+  typename C::const_iterator start = container.cbegin();
+  typename C::const_iterator end = container.cend();
+  for (; start != end; ++start) {
+    std::cout << *start << " ";
+  }
 }
 
 }  // namespace SomeTemplateInstance

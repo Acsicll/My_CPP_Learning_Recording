@@ -17,8 +17,11 @@ int main() {
   // TestSinglePopPush();
   // TestLockFreeQueBase();
   // TestTemplate();
-  TestString();
+  // TestTemplate();
   // show_cplusplus_version::show_cplusplus_version();
+  // TestParallelSort();
+  // TestParallelForEach();
+  TestParallelFind();
   std::cout << "Done" << std::endl;
   return 0;
 }

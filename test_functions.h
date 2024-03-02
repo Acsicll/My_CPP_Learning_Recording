@@ -2,9 +2,11 @@
 #include "few_resources_use_to_test.h"
 #include "imitate_container.h"
 #include "meta_template_leaning.h"
+#include "mingw.mutex.h"
+#include "mingw.thread.h"
 #include "use_bind.h"
-
-#include <mingw.thread.h>
+// #include <mutex>
+// #include <thread>
 #include <set>
 #include <sstream>
 
@@ -738,7 +740,7 @@ void TestTemplate() {
   // printValue(new_type_data);
 }
 
-void TestString() {
+void TestTemplate2() {
   using namespace std::string_literals;
   using namespace SomeTemplateInstance;
   // printValue("abcde"s.substr(1, 3));
@@ -749,10 +751,59 @@ void TestString() {
   auto ret2 = enable_arr_template_max(inum1, dnum1);
   // using_temp_arr_create_template_print(ret1, ret2);
   int arr[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  // print_arr_by_indexs(arr, 1, 4, 5);
-  // using_temp_arr_create_template_print(
-  //     implicit_conversion_ret_type_sum(1, 2, 3, 4, 5, 6));
-  // using_temp_arr_create_template_print(
-  //     implicit_conversion_ret_type_sum(-1.2, 20, -5, 0.3, 100, 0));
+#ifdef debug
+  print_arr_by_indexs(arr, 1, 4, 5);
+  using_temp_arr_create_template_print(
+      implicit_conversion_ret_type_sum(1, 2, 3, 4, 5, 6));
+  using_temp_arr_create_template_print(
+      implicit_conversion_ret_type_sum(-1.2, 20, -5, 0.3, 100, 0));
   non_type_template_print<1, 2, 10, 10, 20, 10>();
+#endif
+}
+
+void TestParallelSort() {
+  using namespace SomeTemplateInstance;
+  int arr[] = {41, -16, 71, 123, 0,   -1, 5,  -10, 11,   256, -25,
+               10, 51,  61, -1,  61,  55, 71, 87,  -124, -16, -71,
+               1,  611, 3,  51,  116, 80, 2,  74,  67};
+  std::list<int> ilist(std::begin(arr), std::end(arr));
+  auto res = parallel_quick_sort(ilist);
+#ifdef debug
+  for (auto val : res) {
+    std::cout << val << " ";
+  }
+#endif
+  printValue<int>(ilist);
+}
+
+void TestParallelForEach() {
+  using namespace SomeTemplateInstance;
+  int arr[] = {41, -16, 71, 123, 0,   -1, 5,  -10, 11,   256, -25,
+               10, 51,  61, -1,  61,  55, 71, 87,  -124, -16, -71,
+               1,  611, 3,  51,  116, 80, 2,  74,  67};
+  std::list<int> ilist(std::begin(arr), std::end(arr));
+#ifdef debug
+  printValue(ilist);
+#endif
+  parallel_for_each(ilist.begin(), ilist.end(),
+                    [](int const& val) { std::cout << val << ' '; });
+  async_for_each(ilist.begin(), ilist.end(),
+                 [](int const& val) { std::cout << val << ' '; });
+}
+
+void TestParallelFind() {
+  int arr[] = {41, -16, 71, 123, 0,   -1, 5,  -10, 11,   256, -25,
+               10, 51,  61, -1,  61,  55, 71, 87,  -124, -16, -71,
+               1,  611, 3,  51,  116, 80, 2,  74,  67};
+  std::list<int> ilist(std::begin(arr), std::end(arr));
+#ifdef debug
+  auto it = parallel_find(ilist.begin(), ilist.end(), 1);
+#endif
+  auto it = parallel_find_async(ilist.begin(), ilist.end(), 1);
+  if (it == ilist.end()) {
+    std::cout << "nont found" << std::endl;
+  } else {
+    std::cout << "find: " << *it << std::endl;
+    ;
+  }
 }

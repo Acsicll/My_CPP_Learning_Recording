@@ -1,6 +1,5 @@
 #ifndef _FEW_RESOURCES_USE_TO_TEST_H_
 #define _FEW_RESOURCES_USE_TO_TEST_H_
-#include <mingw.thread.h>
 #include <atomic>
 #include <iostream>
 #include <iterator>
@@ -29,16 +28,6 @@ struct hazard_pointer {
 };
 hazard_pointer hazard_pointers[max_hazard_pointers];
 }  // namespace CanNoTRunInVscode
-
-void printValue() {
-  std::cout << std::endl;
-}
-
-template <typename T, typename... Args>
-void printValue(T val, Args... args) {
-  std::cout << val << " ";
-  printValue(args...);
-}
 
 std::vector<int> queue_data;
 std::atomic<int> count;
