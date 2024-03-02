@@ -6,7 +6,7 @@
 #include <mingw.shared_mutex.h>
 #include <mingw.thread.h>
 #include "few_resources_use_to_test.h"
-#include "meta_template_leaning.h"
+#include "meta_template_learning.h"
 // #include <mingw.future.h>
 // #include <condition_variable>
 // #include <thread>
@@ -1974,6 +1974,6 @@ void parallel_partial_sum(Iterator first, Iterator last) {
   Iterator final_element = block_start;
   std::advance(final_element, std::distance(block_start, last) - 1);
   process_chunk()(block_start, final_element,
-                  (num_threads > 1) ? &previous_end_values.back() : 0);
+                  (num_threads > 1) ? &previous_end_values.back() : 0, 0);
 }
 #endif

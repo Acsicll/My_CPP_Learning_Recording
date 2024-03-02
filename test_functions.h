@@ -1,7 +1,7 @@
 #include "concurrency_leaning.h"
 #include "few_resources_use_to_test.h"
 #include "imitate_container.h"
-#include "meta_template_leaning.h"
+#include "meta_template_learning.h"
 #include "mingw.mutex.h"
 #include "mingw.thread.h"
 #include "use_bind.h"
@@ -804,6 +804,15 @@ void TestParallelFind() {
     std::cout << "nont found" << std::endl;
   } else {
     std::cout << "find: " << *it << std::endl;
-    ;
   }
+}
+
+void TestParallelPartialSum() {
+  using namespace SomeTemplateInstance;
+  int arr[] = {41, -16, 71, 123, 0,   -1, 5,  -10, 11,   256, -25,
+               10, 51,  61, -1,  61,  55, 71, 87,  -124, -16, -71,
+               1,  611, 3,  51,  116, 80, 2,  74,  67};
+  std::list<int> ilist(std::begin(arr), std::end(arr));
+  parallel_partial_sum(ilist.begin(), ilist.end());
+  printValue(ilist);
 }
