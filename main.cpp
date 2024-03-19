@@ -21,7 +21,8 @@ int main() {
   // show_cplusplus_version::show_cplusplus_version();
   // TestParallelSort();
   // TestParallelForEach();
-  TestParallelPartialSum();
-  std::cout << "Done" << std::endl;
+  // TestParallelPartialSum();
+  TestThreadPoolSort();
+
   return 0;
 }

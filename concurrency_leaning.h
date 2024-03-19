@@ -1976,4 +1976,124 @@ void parallel_partial_sum(Iterator first, Iterator last) {
   process_chunk()(block_start, final_element,
                   (num_threads > 1) ? &previous_end_values.back() : 0, 0);
 }
+
+class NoneCopy {
+ public:
+  ~NoneCopy() {}
+
+ protected:
+  NoneCopy() {}
+
+ private:
+  NoneCopy(const NoneCopy&) = delete;
+  NoneCopy& operator=(const NoneCopy&) = delete;
+};
+
+class ThreadPool : public NoneCopy {
+  using Task = std::packaged_task<void()>;
+
+ private:
+  std::atomic<bool> stop_;
+  std::atomic<int> thread_nums_;
+  std::queue<Task> tasks_;
+  std::vector<std::thread> pool_;
+  std::mutex mtx_;
+  std::condition_variable cv_;
+
+ public:
+  ~ThreadPool() { stop(); }
+  static ThreadPool& GetInstance() {
+    static ThreadPool ins;
+    return ins;
+  }
+
+  void start() {
+    for (int i = 0; i < thread_nums_; i++) {
+      pool_.emplace_back([this]() {
+        while (!this->stop_.load()) {
+          Task task;
+          {
+            std::unique_lock<std::mutex> lock(mtx_);
+            this->cv_.wait(lock, [this] {
+              return this->stop_.load() || !this->tasks_.empty();
+            });
+            if (this->tasks_.empty()) {
+              return;
+            }
+            task = std::move(this->tasks_.front());
+            this->tasks_.pop();
+          }
+          this->thread_nums_++;
+          task();
+          this->thread_nums_--;
+        }
+      });
+    }
+  }
+
+  void stop() {
+    stop_.store(true);
+    cv_.notify_all();
+    for (auto& val : pool_) {
+      if (val.joinable()) {
+        std::cout << "join thread" << val.get_id() << std::endl;
+        val.join();
+      }
+    }
+  }
+
+  int idThreadCount() { return thread_nums_; }
+
+  template <typename Func, typename... Args>
+  auto commiTask(Func&& f, Args&&... args) -> std::future<
+      decltype(std::forward<Func>(f)(std::forward<Args>(args)...))> {
+    using RetType =
+        decltype(std::forward<Func>(f)(std::forward<Args>(args)...));
+    if (stop_.load()) {
+      return std::future<RetType>{};
+    }
+    auto task = std::make_shared<std::packaged_task<RetType()>>(
+        std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
+    std::future<RetType> ret = task->get_future();
+    {
+      std::lock_guard<std::mutex> lock(mtx_);
+      tasks_.emplace([task] { (*task)(); });
+    }
+    cv_.notify_one();
+    return ret;
+  }
+
+ private:
+  ThreadPool(unsigned int num = std::thread::hardware_concurrency())
+      : stop_(false) {
+    if (num <= 1) {
+      thread_nums_ = 2;
+    } else {
+      thread_nums_ = num;
+    }
+    start();
+  }
+};
+
+template <typename T>
+std::list<T> pool_thread_quick_sort(std::list<T> input) {
+  if (input.empty()) {
+    return input;
+  }
+  std::list<T> result;
+  result.splice(result.begin(), input, input.begin());
+  T const& partition_val = *result.begin();
+  typename std::list<T>::iterator divide_point =
+      std::partition(input.begin(), input.end(),
+                     [&](T const& val) { return val < partition_val; });
+  std::list<T> new_lower_chunk;
+  new_lower_chunk.splice(new_lower_chunk.end(), input, input.begin(),
+                         divide_point);
+  std::future<std::list<T>> new_lower = ThreadPool::GetInstance().commiTask(
+      pool_thread_quick_sort<T>, new_lower_chunk);
+  std::list<T> new_higher(pool_thread_quick_sort(input));
+  result.splice(result.end(), new_higher);
+  result.splice(result.begin(), new_lower.get());
+  return result;
+}
 #endif
